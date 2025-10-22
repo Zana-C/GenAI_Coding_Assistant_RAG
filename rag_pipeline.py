@@ -123,7 +123,7 @@ def setup_vector_stores() -> Dict[str, Chroma]:
     """
     if USE_LOCAL_EMBEDDINGS:
         print("\n📥 Yerel embedding modeli kullanılıyor...")
-        print("⚠️  İlk çalıştırmada ~1.5GB model indirilecek (sonraki çalıştırmalarda anında hazır)")
+
         embeddings = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
             model_kwargs={'device': 'cpu'},
