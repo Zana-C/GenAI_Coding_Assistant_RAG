@@ -64,6 +64,8 @@ streamlit run app.py
 ```
 Tarayıcınızda otomatik olarak açılacaktır.
 
+Ayrıca bu link üzerinden web uygulamasına doğrudan erişilebilir: https://genaicodingassistantrag-26mwl2wh4fhtb2qfdue4nf.streamlit.app/ 
+
 
 # GenAI_Coding_Assistant_RAG
 # Multilingual Coding and Debugging Assistant Chatbot
@@ -126,3 +128,5 @@ Once indexing is complete, start the interface:
 streamlit run app.py
 ```
 It will automatically start on your browser
+
+Also the live web application can be accessed directly via this link: https://genaicodingassistantrag-26mwl2wh4fhtb2qfdue4nf.streamlit.app/
