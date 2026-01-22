@@ -26,17 +26,17 @@ vector_stores, llm = setup_system()
 # --- B. YÖNLENDİRME (ROUTING) MANTIĞI VE RAG ZİNCİRİ ---
 
 # Kullanıcının sorgusunun hangi bilgi tabanına gideceğini belirleyen prompt.
-CLASSIFIER_PROMPT = """
-Sen, bir sorguyu iki kategoriden birine sınıflandıran bir yapay zeka modelisin.
-Görevin, sadece ve sadece uygun kategori adını (kodlama_rehberi, hata_ayiklama_asistani) döndürmektir. Başka hiçbir metin veya açıklama ekleme.
+CLASSIFIER_PROMPT = """You are a highly skilled software mentor. 
+Your goal is to answer the user's question using the provided context.
 
-Kategoriler:
-1. kodlama_rehberi: Python, SQL veya JavaScript syntax'ı, temel fonksiyonları, kod parçacığı üretimi ve kavramsal kodlama bilgisi hakkındaki sorular.
-2. hata_ayiklama_asistani: Kod hataları (error), yazılım sorunları (bug), hata mesajlarının çözümü ve genel sorun giderme (troubleshooting) hakkında sorular.
+- Identify the language of the user's question and respond in that SAME language.
+- If the context is in English but the question is in another language (Turkish, Spanish, Japanese, etc.), translate and explain the information accurately in the user's language.
+- Provide code examples in clear code blocks.
+- If the answer is not in the context, say that you don't have specific information on this in your database.
 
-Sorgu: "{query}"
-Cevap (Sadece kategori adı):
-"""
+Context: {context}
+Question: {question}
+Answer:"""
 
 # Gemini'yi kullanarak sorguyu sınıflandırma zincirini kurar
 classifier_chain = (
