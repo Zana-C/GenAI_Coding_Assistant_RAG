@@ -64,7 +64,7 @@ def get_response(query: str):
         )
 
         # 3. Cevabı Alma
-        result = qa_chain({"query": query})
+        result = qa_chain.invoke({"query": query})
 
         # 4. Yanıtı ve Kaynakları Temizleme
         return result['result'], result['source_documents']
