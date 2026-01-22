@@ -58,28 +58,32 @@ classifier_chain = (
 )
 
 def get_response(query: str):
-    # 1. Adım: Sorgunun hangi kategoriye ait olduğunu bul
-    topic = classifier_chain.invoke({"query": query}).strip().lower()
+    try:
+        # 1. Adım: Sorgu sınıflandırma
+        topic = classifier_chain.invoke({"query": query}).strip().lower()
 
-    if topic in vector_stores:
-        st.info(f"Yönlendirilen Bilgi Alanı: **{topic.upper()}**")
-        retriever = vector_stores[topic].as_retriever(search_kwargs={"k": 5})
+        if topic in vector_stores:
+            st.info(f"Yönlendirilen Bilgi Alanı: **{topic.upper()}**")
+            retriever = vector_stores[topic].as_retriever(search_kwargs={"k": 5})
 
-        # 2. Adım: Seçilen alana özel RAG zincirini kur
-        # chain_type_kwargs içindeki prompt, RetrievalQA için standart olan 'question' değişkenini kullanmalı
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            retriever=retriever,
-            return_source_documents=True,
-            chain_type_kwargs={"prompt": QA_PROMPT} 
-        )
+            qa_chain = RetrievalQA.from_chain_type(
+                llm=llm,
+                chain_type="stuff",
+                retriever=retriever,
+                return_source_documents=True,
+                chain_type_kwargs={"prompt": QA_PROMPT}
+            )
 
-        # 3. Adım: Cevabı Üret (Dışarıdan 'query' gönderilir, LangChain içeriye 'question' olarak mapler)
-        result = qa_chain.invoke({"query": query})
-        return result['result'], result['source_documents']
-    else:
-        return f"Sorgunuz sınıflandırılamadı. Konu: {topic}", []
+            # 2. Adım: Cevap üretme
+            result = qa_chain.invoke({"query": query})
+            return result['result'], result['source_documents']
+        else:
+            return f"Sınıflandırma başarısız: {topic}", []
+
+    except Exception as e:
+        if "429" in str(e) or "ResourceExhausted" in str(e):
+            return "⚠️ **API Kotası Doldu:** Ücretsiz katman limitlerine ulaştınız. Lütfen 30-60 saniye bekleyip tekrar deneyin.", []
+        return f"❌ Bir hata oluştu: {e}", []
 
 # --- D. ARAYÜZ (UI) AYARLARI ---
 
