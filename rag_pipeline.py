@@ -63,53 +63,69 @@ DATASET_CONFIG = {
 
 # --- B. VERİ İŞLEME VE İNDEKSLEME FONKSİYONLARI ---
 
-def load_and_split_data(dataset_names: List[str], text_column: str, split_percentage: str) -> List[Document]:
+def load_and_split_data(datasets_info: List[Dict], split_percentage: str) -> List[Document]:
     """
-    Hugging Face veri setlerini yükler, parçalara ayırır ve LangChain Document objelerine dönüştürür.
-
+    TR: Hugging Face veri setlerini yükler, yapılandırılmış sütunlara göre dökümana çevirir ve parçalar.
+    EN: Loads Hugging Face datasets, converts them into documents based on structured columns, and chunks them.
     """
     all_chunks = []
 
-    for ds_name in dataset_names:
-        print(f"-> Veri Seti Yükleniyor: {ds_name} ({split_percentage})")
+    # TR: Liste içindeki her bir veri seti konfigürasyonu için döngü başlat
+    # EN: Start a loop for each dataset configuration in the list
+    for ds_info in datasets_info:
+        # TR: Sözlükten veri seti adını ve ilgili metin sütununu al
+        # EN: Retrieve the dataset name and the relevant text column from the dictionary
+        ds_name = ds_info["name"]
+        text_column = ds_info["column"] 
+        
+        print(f"-> Veri Seti Yükleniyor / Loading Dataset: {ds_name} ({split_percentage})")
 
-         # Veri seti split kontrolü: train, all ve test split'lerini dener
+        # TR: Veri setini farklı split (ayrım) adlarına göre yüklemeyi dene
+        # EN: Attempt to load the dataset using different split names
         try:
+            # TR: Öncelikle 'train' (eğitim) setini belirlenen yüzde kadar yükle
+            # EN: First, try loading the 'train' split with the specified percentage
             dataset = load_dataset(ds_name, split=f'train[:{split_percentage}]')
-        except Exception as e:
-            # train yoksa, 'all' split'ini deniyoruz
-            print(f"  ⚠ 'train' split bulunamadı, 'all' deneniyor...")
+        except Exception:
             try:
+                # TR: 'train' yoksa, tüm veriyi kapsayan 'all' split'ini dene
+                # EN: If 'train' is missing, try the 'all' split
                 dataset = load_dataset(ds_name, split=f'all[:{split_percentage}]')
-            except Exception as e2:
-                # 'all' da yoksa, 'test' split'ini deniyoruz
-                print(f"  ⚠ 'all' split bulunamadı, 'test' deneniyor...")
-                try:
-                    dataset = load_dataset(ds_name, split=f'test[:{split_percentage}]')
-                except Exception as e3:
-                    # Hiçbir split bulunamazsa hata verir ve sonraki veri setine geçer
-                    print(f"  ❌ Veri seti yüklenemedi. Bilinen split'ler bulunamadı.")
-                    continue  # Döngüde sonraki veri setine geçer
+            except Exception:
+                # TR: Hiçbir split bulunamazsa hata mesajı ver ve bir sonrakine geç
+                # EN: If no split is found, print error and continue to the next dataset
+                print(f"  ❌ {ds_name} yüklenemedi / failed to load.")
+                continue
 
-        # İlgili metin sütununu kullanarak LangChain Document objelerine dönüştür
+        # TR: Ham veriyi LangChain 'Document' formatına dönüştür
+        # EN: Transform raw data into LangChain 'Document' format
         documents = [
+            # TR: Metni string'e çevir ve kaynağı metadata (üstveri) olarak ekle
+            # EN: Convert text to string and add the source as metadata
             Document(page_content=str(row[text_column]), metadata={"source_dataset": ds_name})
-            for row in dataset if text_column in row and row[text_column] is not None
+            for row in dataset 
+            # TR: Sütun kontrolü ve boş veri (None) kontrolü yaparak hataları önle
+            # EN: Prevent errors by checking for column existence and None values
+            if text_column in row and row[text_column] is not None
         ]
 
-        print(f"  ✓ {len(documents)} doküman yüklendi")
+        print(f"  ✓ {len(documents)} doküman yüklendi / docs loaded (Sütun/Column: {text_column})")
 
-        # Parçalama (Chunking)
+        # TR: Büyük metinleri anlamlı parçalara ayırmak için splitter (ayırıcı) yapılandır
+        # EN: Configure the splitter to break down large texts into meaningful chunks
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1500,
-            chunk_overlap=200,
-            separators=["\n\n", "\n", " ", ""]
+            chunk_size=1500,        # TR: Her parçanın karakter sınırı / EN: Character limit per chunk
+            chunk_overlap=200,      # TR: Parçalar arası bağlamsal çakışma / EN: Contextual overlap between chunks
+            separators=["\n\n", "\n", " ", ""] # TR: Ayırma öncelikleri / EN: Splitting priorities
         )
-
+        
+        # TR: Dokümanları parçala ve ana listeye ekle
+        # EN: Split documents and extend the main list
         chunks = text_splitter.split_documents(documents)
         all_chunks.extend(chunks)
 
-    print(f"✓ Toplam {len(all_chunks)} parça oluşturuldu.")
+    # TR: Oluşturulan tüm parçaları (chunk) döndür
+    # EN: Return all generated chunks
     return all_chunks
 
 
