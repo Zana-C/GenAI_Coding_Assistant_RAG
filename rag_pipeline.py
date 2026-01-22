@@ -47,18 +47,16 @@ LLM_MODEL = "gemini-2.5-flash" # Cevap üretimi için hızlı Gemini modeli
 DATASET_CONFIG = {
     "kodlama_rehberi": {
         "datasets": [
-            "TokenBender/code_instructions_122k_alpaca_style",
-            "b-mc2/sql-create-context",
-            "red1xe/code_instructions"
+            {"name": "TokenBender/code_instructions_122k_alpaca_style", "column": "instruction"},
+            {"name": "b-mc2/sql-create-context", "column": "question"},
+            {"name": "red1xe/code_instructions", "column": "instruction"}
         ],
-        "text_column": "instruction",  # Metin sütunu adı
         "split_percentage": "3%"
     },
     "hata_ayiklama_asistani": {
         "datasets": [
-            "devangb4/scikit-learn-issues"
+            {"name": "devangb4/scikit-learn-issues", "column": "text"}
         ],
-        "text_column": "text",         # Sorun açıklamalarının sütunu
         "split_percentage": "15%"
     }
 }
