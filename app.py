@@ -21,7 +21,7 @@ vector_stores, llm = setup_system()
 
 # --- B. PROMPT ŞABLONLARI ---
 
-# 1. Yönlendirici (Router) Prompt'u: Sadece kategori adını döndürür.
+# 1. Yönlendirici (Router) Prompt'u
 CLASSIFIER_PROMPT = """Analyze the user query and classify it into one of the following categories:
 - 'kodlama_rehberi': If the query is about writing code, syntax, SQL, or programming help.
 - 'hata_ayiklama_asistani': If the query is about specific errors, bugs, or troubleshooting.
@@ -31,7 +31,7 @@ Output ONLY the category name.
 Query: {query}
 Category:"""
 
-# 2. Mentor (QA) Prompt'u: Bilgi veren ve dili otomatik ayarlayan prompt.
+# 2. Mentor (QA) Prompt'u (Hatanın çözüldüğü yer: {query} -> {question})
 QA_PROMPT_TEMPLATE = """You are a highly skilled software mentor. 
 Answer the user's question using ONLY the provided context.
 
@@ -41,17 +41,16 @@ Answer the user's question using ONLY the provided context.
 4. If the answer is not in the context, say: "I don't have information on this in my database."
 
 Context: {context}
-Question: {query}
+Question: {question} 
 Answer:"""
 
 QA_PROMPT = PromptTemplate(
     template=QA_PROMPT_TEMPLATE, 
-    input_variables=["context", "query"]
+    input_variables=["context", "question"]
 )
 
 # --- C. ZİNCİRLER VE MANTIK ---
 
-# Sorgu sınıflandırma zinciri
 classifier_chain = (
     PromptTemplate.from_template(CLASSIFIER_PROMPT)
     | llm
@@ -66,16 +65,17 @@ def get_response(query: str):
         st.info(f"Yönlendirilen Bilgi Alanı: **{topic.upper()}**")
         retriever = vector_stores[topic].as_retriever(search_kwargs={"k": 5})
 
-        # 2. Adım: Seçilen alana özel RAG zincirini kur (Özel QA_PROMPT ile)
+        # 2. Adım: Seçilen alana özel RAG zincirini kur
+        # chain_type_kwargs içindeki prompt, RetrievalQA için standart olan 'question' değişkenini kullanmalı
         qa_chain = RetrievalQA.from_chain_type(
             llm=llm,
             chain_type="stuff",
             retriever=retriever,
             return_source_documents=True,
-            chain_type_kwargs={"prompt": QA_PROMPT} # KeyError'ı ve dili çözen yer
+            chain_type_kwargs={"prompt": QA_PROMPT} 
         )
 
-        # 3. Adım: Cevabı Üret
+        # 3. Adım: Cevabı Üret (Dışarıdan 'query' gönderilir, LangChain içeriye 'question' olarak mapler)
         result = qa_chain.invoke({"query": query})
         return result['result'], result['source_documents']
     else:
@@ -104,7 +104,6 @@ if 'lang' not in st.session_state: st.session_state.lang = 'TR'
 
 st.set_page_config(page_title="GenAI Coding Assistant", layout="wide")
 
-# Dil Seçimi (Toggle)
 if st.toggle("Türkçe / English", value=(st.session_state.lang == 'EN')):
     st.session_state.lang = 'EN'
 else:
@@ -113,14 +112,12 @@ else:
 LANG = LANG_OPTIONS[st.session_state.lang]
 st.title(LANG['title'])
 
-# Chat Geçmişi
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": LANG['intro']}]
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]): st.markdown(msg["content"])
 
-# Chat Girişi
 if prompt := st.chat_input(LANG['input_hint']):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
