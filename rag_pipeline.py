@@ -163,7 +163,6 @@ def setup_vector_stores() -> Dict[str, Chroma]:
             # Veri yükleme ve parçalama
             chunks = load_and_split_data(
                 config["datasets"],
-                config["text_column"],
                 config["split_percentage"]
             )
 
