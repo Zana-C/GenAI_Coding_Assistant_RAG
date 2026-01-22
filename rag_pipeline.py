@@ -33,7 +33,7 @@ USE_LOCAL_EMBEDDINGS = True
 
 if USE_LOCAL_EMBEDDINGS:
 
-    EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2" # Yerel (HuggingFace) model
+    EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" # Yerel (HuggingFace) model
 else:
 
     EMBEDDING_MODEL = "models/embedding-001" # Google Gemini API modeli
