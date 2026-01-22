@@ -38,7 +38,7 @@ else:
 
     EMBEDDING_MODEL = "models/embedding-001" # Google Gemini API modeli
 
-LLM_MODEL = "gemini-1.5-flash" # Cevap üretimi için hızlı Gemini modeli
+LLM_MODEL = "gemini-2.0-flash" # Cevap üretimi için hızlı Gemini modeli
 
 
 
