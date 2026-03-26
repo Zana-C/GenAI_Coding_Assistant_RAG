@@ -1,5 +1,6 @@
 # app.py - ÇOK DİLLİ VE ÇOK KATMANLI KODLAMA ASİSTANI
 
+import re
 import streamlit as st
 from rag_pipeline import initialize_rag_system
 from langchain_core.prompts import PromptTemplate
@@ -60,25 +61,38 @@ classifier_chain = (
 def get_response(query: str):
     try:
         # 1. Adım: Sorgu sınıflandırma
-        topic = classifier_chain.invoke({"query": query}).strip().lower()
+        raw_topic = classifier_chain.invoke({"query": query})
 
-        if topic in vector_stores:
-            st.info(f"Yönlendirilen Bilgi Alanı: **{topic.upper()}**")
-            retriever = vector_stores[topic].as_retriever(search_kwargs={"k": 5})
+        # LLM bazen backtick, tırnak veya fazladan metin ekleyebilir.
+        # Bilinen kategori adlarından birini bulmak için regex kullanıyoruz.
+        topic = None
+        raw_lower = raw_topic.strip().lower()
+        for key in vector_stores.keys():
+            # Anahtar kelimeyi düz veya işaretlenmiş hâliyle ara
+            if re.search(r'\b' + re.escape(key) + r'\b', raw_lower):
+                topic = key
+                break
 
-            qa_chain = RetrievalQA.from_chain_type(
-                llm=llm,
-                chain_type="stuff",
-                retriever=retriever,
-                return_source_documents=True,
-                chain_type_kwargs={"prompt": QA_PROMPT}
-            )
-
-            # 2. Adım: Cevap üretme
-            result = qa_chain.invoke({"query": query})
-            return result['result'], result['source_documents']
+        # Eğer hiçbir kategori eşleşmezse, ilk mevcut depoya yönlendir
+        if topic is None:
+            topic = list(vector_stores.keys())[0]
+            st.warning(f"Kategori belirlenemedi ('{raw_lower[:60]}...'), varsayılan kullanılıyor: **{topic.upper()}**")
         else:
-            return f"Sınıflandırma başarısız: {topic}", []
+            st.info(f"Yönlendirilen Bilgi Alanı: **{topic.upper()}**")
+
+        retriever = vector_stores[topic].as_retriever(search_kwargs={"k": 5})
+
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True,
+            chain_type_kwargs={"prompt": QA_PROMPT}
+        )
+
+        # 2. Adım: Cevap üretme
+        result = qa_chain.invoke({"query": query})
+        return result['result'], result['source_documents']
 
     except Exception as e:
         if "429" in str(e) or "ResourceExhausted" in str(e):

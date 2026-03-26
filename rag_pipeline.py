@@ -21,8 +21,7 @@ if "GEMINI_API_KEY" in os.environ and "GOOGLE_API_KEY" not in os.environ:
     os.environ["GOOGLE_API_KEY"] = os.environ["GEMINI_API_KEY"]
 
 if "GOOGLE_API_KEY" not in os.environ:
-    print("HATA: GOOGLE_API_KEY veya GEMINI_API_KEY ortam değişkeni bulunamadı.")
-    exit()
+    raise EnvironmentError("HATA: GOOGLE_API_KEY veya GEMINI_API_KEY ortam değişkeni bulunamadı. Lütfen .env dosyanızı oluşturun.")
 
 # --- A. SABİTLER VE KONFİGÜRASYON ---
 
@@ -38,7 +37,7 @@ else:
 
     EMBEDDING_MODEL = "models/embedding-001" # Google Gemini API modeli
 
-LLM_MODEL = "gemini-2.5-flash" # Cevap üretimi için hızlı Gemini modeli
+LLM_MODEL = "gemini-1.5-flash" # Cevap üretimi için hızlı Gemini modeli
 
 
 
@@ -252,7 +251,7 @@ if __name__ == "__main__":
 
         # Test sorgusu (opsiyonel)
         print("\n--- Test Sorgusu ---")
-        test_result = rag_chain({"query": "What is scikit-learn?"})
+        test_result = rag_chain.invoke({"query": "What is scikit-learn?"})
         print(f"Soru: What is scikit-learn?")
         print(f"Cevap: {test_result['result'][:200]}...")
 
